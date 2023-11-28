@@ -7,69 +7,58 @@ import os
 import torch
 import shutil
 
-def create_bipartite_graph_from_dataset(rating_set_id: str):
+def create_bipartite_graph_from_dataset(rating_set_id: str) -> tuple[HeteroData, HeteroData]:
     ml100k_path = os.path.join(INTERIM_PATH, "ml-100k")
 
     users_data_path = os.path.join(ml100k_path, "u.user")
     movies_data_path = os.path.join(ml100k_path, "u.item")
     rating_train_data_path = os.path.join(ml100k_path, f"u{rating_set_id}.base")
-    rating_test_data_path = os.path.join(ml100k_path, f"u{rating_set_id}.base")
-
-    data = HeteroData()
+    rating_test_data_path = os.path.join(ml100k_path, f"u{rating_set_id}.test")
 
     # Process movie data:
-    df = pd.read_csv(movies_data_path, sep='|', header=None, names=MOVIE_HEADERS, index_col='movieId', encoding='ISO-8859-1')
-    movie_mapping = {idx: i for i, idx in enumerate(df.index)}
-
-    x = df[MOVIE_HEADERS[6:]].values
-    data['movie'].x = torch.from_numpy(x).to(torch.float)
+    movie_df = pd.read_csv(movies_data_path, sep='|', header=None, names=MOVIE_HEADERS, index_col='movieId', encoding='ISO-8859-1')
+    movie_mapping = {idx: i for i, idx in enumerate(movie_df.index)}
+    genre_data = movie_df[MOVIE_HEADERS[6:]].values
 
     # Process user data:
-    df = pd.read_csv(users_data_path, sep='|', header=None, names=USER_HEADERS, index_col='userId', encoding='ISO-8859-1')
-    user_mapping = {idx: i for i, idx in enumerate(df.index)}
+    user_df = pd.read_csv(users_data_path, sep='|', header=None, names=USER_HEADERS, index_col='userId', encoding='ISO-8859-1')
+    user_mapping = {idx: i for i, idx in enumerate(user_df.index)}
 
-    age = df['age'].values / df['age'].values.max()
+    # Normalize age
+    age = user_df['age'].values / user_df['age'].values.max()
     age = torch.from_numpy(age).to(torch.float).view(-1, 1)
 
-    gender = df['gender'].str.get_dummies().values
+    # Encode gender
+    gender = user_df['gender'].str.get_dummies().values
     gender = torch.from_numpy(gender).to(torch.float)
 
-    occupation = df['occupation'].str.get_dummies().values
+    # Encode occupation
+    occupation = user_df['occupation'].str.get_dummies().values
     occupation = torch.from_numpy(occupation).to(torch.float)
 
-    data['user'].x = torch.cat([age, gender, occupation], dim=-1)
+    result = []
+    for rating_path in [rating_train_data_path, rating_test_data_path]:
+        data = HeteroData()
+        data['movie'].x = torch.from_numpy(genre_data).to(torch.float)
+        data['user'].x = torch.cat([age, gender, occupation], dim=-1)
 
-    # Process rating data for training:
-    df = pd.read_csv(rating_train_data_path, sep='\t', header=None, names=RATING_HEADERS,)
+        # Process rating data for training:
+        df = pd.read_csv(rating_path, sep='\t', header=None, names=RATING_HEADERS,)
 
-    src = [user_mapping[idx] for idx in df['userId']]
-    dst = [movie_mapping[idx] for idx in df['movieId']]
-    edge_index = torch.tensor([src, dst])
-    data['user', 'rates', 'movie'].edge_index = edge_index
+        src = [user_mapping[idx] for idx in df['userId']]
+        dst = [movie_mapping[idx] for idx in df['movieId']]
+        
+        edge_index = torch.tensor([src, dst])
+        data['user', 'rates', 'movie'].edge_index = edge_index
 
-    rating = torch.from_numpy(df['rating'].values).to(torch.long)
-    data['user', 'rates', 'movie'].rating = rating
+        rating = torch.from_numpy(df['rating'].values).to(torch.long)
+        data['user', 'rates', 'movie'].rating = rating
 
-    time = torch.from_numpy(df['timestamp'].values)
-    data['user', 'rates', 'movie'].time = time
+        data['movie', 'rated_by', 'user'].edge_index = edge_index.flip([0])
+        data['movie', 'rated_by', 'user'].rating = rating
+        result.append(data)
 
-    data['movie', 'rated_by', 'user'].edge_index = edge_index.flip([0])
-    data['movie', 'rated_by', 'user'].rating = rating
-    data['movie', 'rated_by', 'user'].time = time
-
-    # Process rating data for testing:
-    df = pd.read_csv(rating_test_data_path, sep='\t', header=None, names=RATING_HEADERS)
-
-    src = [user_mapping[idx] for idx in df['userId']]
-    dst = [movie_mapping[idx] for idx in df['movieId']]
-    edge_label_index = torch.tensor([src, dst])
-    data['user', 'rates', 'movie'].edge_label_index = edge_label_index
-
-    edge_label = torch.from_numpy(df['rating'].values).to(torch.float)
-    data['user', 'rates', 'movie'].edge_label = edge_label
-
-    torch.save(data.to_dict(), os.path.join(INTERIM_PATH, f"data{rating_set_id}.pt"))
-
+    return result
 
 if __name__ == "__main__":
 
