@@ -26,7 +26,12 @@ if __name__ == "__main__":
         user_number = data["user"].x.shape[0]
         movie_number = data["movie"].x.shape[0]
         
-        embeddings = model.encode_graph(data)
+        full_edges = torch.zeros((2, user_number*movie_number))
+        for user in range(user_number):
+            for movie in range(movie_number):
+                full_edges[0][(user+1)*(movie+1)-1] = user
+                full_edges[1][(user+1)*(movie+1)-1] = movie 
+
         # Predict for each user rating for each movie
-        full_predictions = torch.matmul(embeddings["user"], embeddings["movie"].T)
+        full_predictions = model(data)
         torch.save(full_predictions, FINAL_PREDICTION_PATH)
