@@ -6,8 +6,18 @@ import torch
 import torch.nn as nn
 import tqdm
 import os
+import argparse
 
 def create_dataloader(data: HeteroData) -> LinkNeighborLoader:
+    """
+    Create dataloader from graph.
+
+    Paramaters:
+        data (HeteroData): graph.
+    
+    Returns:
+        LinkNeighborLoader: data loader.
+    """
     return LinkNeighborLoader(
         data,
         # Sample 128 neighbors for each node for 2 iterations
@@ -18,7 +28,17 @@ def create_dataloader(data: HeteroData) -> LinkNeighborLoader:
         edge_label=data["user", "rates", "movie"].edge_label
     )
 
-def train_one_epoch(model, train_loader, loss_fn, optimizer, device):
+def train_one_epoch(model: RecommendationModel, train_loader: LinkNeighborLoader, optimizer: torch.optim.Optimizer, loss_fn, device) -> None:
+    """
+    Train model for one epoch.
+
+    Parameters:
+        model (RecommendationModel): Recommendation model.
+        train_loader (LinkNeighborLoader): Train data loader.
+        optimizer (Optimizer): Optimizer.
+        loss_fn (_Loss): Loss function.
+        device (str): Device
+    """
     model.train()
     total_loss = 0
     for sampled_data in tqdm.tqdm(train_loader):
@@ -37,7 +57,17 @@ def train_one_epoch(model, train_loader, loss_fn, optimizer, device):
     return total_loss
 
 
-def val_one_epoch(model, train_data, val_data, loss_fn, device):
+def val_one_epoch(model: RecommendationModel, train_data: HeteroData, val_data: HeteroData, loss_fn, device) -> None:
+    """
+    Validate model for one epoch.
+
+    Parameters:
+        model (RecommendationModel): Recommendation model.
+        train_data (HeteroData): Train graph.
+        val_data (HeteroData): Validation graph.
+        loss_fn (_Loss): Loss function.
+        device (str): Device
+    """
     model.eval()
     with torch.no_grad():
         total_loss = 0
@@ -56,9 +86,11 @@ if __name__ == "__main__":
     print(train_data)
     train_loader = create_dataloader(train_data)
     
-    
+    # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # Create model
     model = RecommendationModel(hidden_channels=128).to(device)
+    # Use Adam optmizer
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     loss_fn = nn.MSELoss()
     epochs = 10

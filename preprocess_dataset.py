@@ -108,4 +108,5 @@ if __name__ == "__main__":
         torch.save(train_data.to_dict(), os.path.join(INTERIM_PATH, f"data{part}_train.pt"))
         torch.save(test_data.to_dict(), os.path.join(INTERIM_PATH, f"data{part}_test.pt"))
         torch.save(val_data.to_dict(), os.path.join(INTERIM_PATH, f"data{part}_val.pt"))
+        print(f"u{part}.base and u{part}.test are prepocessed!")
     shutil.rmtree(os.path.join(INTERIM_PATH, "ml-100k"))
