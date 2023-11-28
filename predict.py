@@ -30,8 +30,8 @@ if __name__ == "__main__":
         for user in range(user_number):
             for movie in range(movie_number):
                 full_edges[0][(user+1)*(movie+1)-1] = user
-                full_edges[1][(user+1)*(movie+1)-1] = movie 
-
+                full_edges[1][(user+1)*(movie+1)-1] = movie
         # Predict for each user rating for each movie
-        full_predictions = model(data)
+        embeds = model.encode_graph(data)
+        full_predictions = model.predict_ratings(embeds["user"], embeds["movie"], full_edges.long())
         torch.save(full_predictions, FINAL_PREDICTION_PATH)
