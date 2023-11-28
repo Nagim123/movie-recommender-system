@@ -9,6 +9,15 @@ import torch
 import shutil
 
 def create_bipartite_graph_from_dataset(rating_set_id: str) -> tuple[HeteroData, HeteroData]:
+    """
+    Create train and test graphs from MovieLens dataset.
+
+    Paramaters:
+        rating_set_id (str): 1, 2, 3, 4, 5, a, b sets of MovieLens dataset.
+
+    Returns:
+        tuple[HeteroData, HeteroData]: Train graph and test graph respectively.
+    """
     ml100k_path = os.path.join(INTERIM_PATH, "ml-100k")
 
     users_data_path = os.path.join(ml100k_path, "u.user")
@@ -62,6 +71,15 @@ def create_bipartite_graph_from_dataset(rating_set_id: str) -> tuple[HeteroData,
     return result
 
 def train_val_split(data: HeteroData) -> tuple[HeteroData, HeteroData]:
+    """
+    Split graph into train and validation sets.
+
+    Paramaters:
+        data (HeteroData): Heterogenous graph.
+
+    Returns:
+        tuple[HeteroData, HeteroData]: Train graph and validation graph respectively.
+    """
     transform = RandomLinkSplit(
         num_val = 0.12, # Fraction of edges for validation set
         num_test = 0.0, # Fraction of edges for test set 
@@ -82,10 +100,12 @@ if __name__ == "__main__":
     with zipfile.ZipFile(RAW_DATASET_PATH) as zip_file:
         zip_file.extractall(INTERIM_PATH)
     
-    data, test_data = create_bipartite_graph_from_dataset("1")
-    train_data, val_data = train_val_split(data)
+    # Transform each data split from dataset
+    for part in ["1", "2", "3", "4", "5", "a", "b"]:
+        data, test_data = create_bipartite_graph_from_dataset(part)
+        train_data, val_data = train_val_split(data)
 
-    torch.save(train_data.to_dict(), os.path.join(INTERIM_PATH, "data1_train.pt"))
-    torch.save(test_data.to_dict(), os.path.join(INTERIM_PATH, "data1_test.pt"))
-    torch.save(val_data.to_dict(), os.path.join(INTERIM_PATH, "data1_val.pt"))
+        torch.save(train_data.to_dict(), os.path.join(INTERIM_PATH, f"data{part}_train.pt"))
+        torch.save(test_data.to_dict(), os.path.join(INTERIM_PATH, f"data{part}_test.pt"))
+        torch.save(val_data.to_dict(), os.path.join(INTERIM_PATH, f"data{part}_val.pt"))
     shutil.rmtree(os.path.join(INTERIM_PATH, "ml-100k"))
