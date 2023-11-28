@@ -1,5 +1,6 @@
 from constants import RAW_DATASET_PATH, INTERIM_PATH, MOVIE_HEADERS, USER_HEADERS, RATING_HEADERS
 from torch_geometric.data import HeteroData
+from torch_geometric.transforms import RandomLinkSplit
 
 import zipfile
 import pandas as pd
@@ -60,11 +61,31 @@ def create_bipartite_graph_from_dataset(rating_set_id: str) -> tuple[HeteroData,
 
     return result
 
+def train_val_split(data: HeteroData) -> tuple[HeteroData, HeteroData]:
+    transform = RandomLinkSplit(
+        num_val = 0.12, # Fraction of edges for validation set
+        num_test = 0.0, # Fraction of edges for test set 
+        # (since we already have separated test set, we set this value to 0)
+        
+        add_negative_train_samples=False, # We do not need negative edges
+        neg_sampling_ratio=0.0,
+        
+        edge_types=("user", "rates", "movie"), # Set all edge types
+        rev_edge_types=("movie", "rev_rates", "user"), # Reverse edges for message passing
+    )
+    train_data, val_data, _ = transform(data)
+    return (train_data, val_data)
+
 if __name__ == "__main__":
 
     # Unzip dataset file
     with zipfile.ZipFile(RAW_DATASET_PATH) as zip_file:
         zip_file.extractall(INTERIM_PATH)
     
-    create_bipartite_graph_from_dataset("1")
+    data, test_data = create_bipartite_graph_from_dataset("1")
+    train_data, val_data = train_val_split(data)
+
+    torch.save(train_data.to_dict(), os.path.join(INTERIM_PATH, "data1_train.pt"))
+    torch.save(test_data.to_dict(), os.path.join(INTERIM_PATH, "data1_test.pt"))
+    torch.save(val_data.to_dict(), os.path.join(INTERIM_PATH, "data1_val.pt"))
     shutil.rmtree(os.path.join(INTERIM_PATH, "ml-100k"))
