@@ -6,11 +6,25 @@ import pathlib
 import os
 import tqdm as tqdm
 import numpy as np
+import json
 
 SCRIPT_PATH = pathlib.Path(__file__).parent.resolve()
 INTERIM_PATH = os.path.join(SCRIPT_PATH, "../data/interim")
 MODELS_PATH = os.path.join(SCRIPT_PATH, "../models")
 FINAL_PREDICTION_PATH = os.path.join(INTERIM_PATH, "complete_prediction.pt")
+
+def compute_RMSE(predicted_ratings: torch.Tensor, true_rating: torch.Tensor) -> float:
+    """
+    Compute RMSE metric.
+
+    Parameters:
+        predicted_ratings (Tensor): Ratings predicted by model.
+        true_ratings (Tensor): Ground truth ratings.
+
+    Returns:
+        float: RMSE value.
+    """
+    return float(np.sqrt(np.mean(np.square((predicted_ratings - true_rating).numpy()))))
 
 @torch.no_grad()
 def evaluate_precision_and_recall(recommendation: torch.Tensor, test_graph: HeteroData, user_id: int, k: int = 5) -> tuple[float, float]:
@@ -94,7 +108,7 @@ def get_user_links_ids(graph: HeteroData, user_id: int) -> torch.Tensor:
     Returns
         Tensor: Link indecies.
     """
-    indices = (user_id == graph["user", "rates", "movie"].edge_label_index[0]).nonzero()
+    indices = (user_id == graph["user", "rates", "movie"].edge_index[0]).nonzero()
     return indices
 
 def extract_movies_with_ratings_by_user(graph: HeteroData, user_id: int) -> torch.Tensor:
@@ -108,7 +122,7 @@ def extract_movies_with_ratings_by_user(graph: HeteroData, user_id: int) -> torc
         Tensor: Movies with ratings
     """
     # Extract edges
-    edge_index = graph["user", "rates", "movie"].edge_label_index
+    edge_index = graph["user", "rates", "movie"].edge_index
     edge_label = graph["user", "rates", "movie"].edge_label
     # Get indecies
     indices = get_user_links_ids(graph, user_id)
@@ -145,29 +159,52 @@ if __name__ == "__main__":
     if not os.path.exists(FINAL_PREDICTION_PATH):
         raise Exception("Final prediction was not created. Please run predict.py file!")
 
-    test_data = HeteroData(_mapping=torch.load(os.path.join(INTERIM_PATH, f"data{args.part}_train.pt")))
+    test_data = HeteroData(_mapping=torch.load(os.path.join(INTERIM_PATH, f"data{args.part}_test.pt")))
     user_number = test_data["user"].x.shape[0]
     movie_number = test_data["movie"].x.shape[0]
 
+    
+    test_edges = test_data["user", "rates", "movie"].edge_index
     full_edges = torch.zeros((2, user_number*movie_number))
+    final_prediction = torch.load(FINAL_PREDICTION_PATH)
+    masked_prediction = torch.zeros(test_edges.shape[1])
+
     for user in range(user_number):
         for movie in range(movie_number):
             full_edges[0][(user+1)*(movie+1)-1] = user
             full_edges[1][(user+1)*(movie+1)-1] = movie
-    final_prediction = torch.load(FINAL_PREDICTION_PATH)
     
+    for i in range(test_edges.shape[1]):
+        user, movie = test_edges[0][i], test_edges[1][i]
+        index = (user+1)*(movie+1)-1
+        masked_prediction[i] = final_prediction[index]
+
+
     K = 20
     progress = tqdm.tqdm(range(user_number))
 
     precisions, recalls, NDCGs = [], [], []
     for user in progress:
-        recommendation = get_model_recommendations(final_prediction, full_edges, user, k=K)
+        recommendation = get_model_recommendations(masked_prediction, test_edges, user, k=K)
         precision, recall = evaluate_precision_and_recall(recommendation, test_data, user, k=K)
-        #NDCG = evaluate_NDCG(recommendation ,test_data, user)
+        NDCG = evaluate_NDCG(recommendation, test_data, user)
         precisions.append(precision)
         recalls.append(recall)
-        #NDCGs.append(NDCG)
+        NDCGs.append(NDCG)
     print(f"Precision@{K} = {np.mean(precisions)}")
     print(f"Recall@{K} = {np.mean(recalls)}")
-    #print(f"NDCG@{K} = {np.mean(NDCGs)}")
+    print(f"NDCG@{K} = {np.mean(NDCGs)}")
+    print(f"RMSE = {compute_RMSE(masked_prediction, test_data['user', 'rates', 'movie'].edge_label)}")
+
+    # Save calculated metrics to metric file
+    with open(os.path.join(SCRIPT_PATH, f"metric_file_{args.part}.json"), "w") as metric_file:
+        metrics = {
+            "part": args.part,
+            "K": K,
+            "Precision": np.mean(precisions),
+            "Recall": np.mean(recalls),
+            "NDCG": np.mean(NDCGs),
+            "RMSE": compute_RMSE(masked_prediction, test_data["user", "rates", "movie"].edge_label)
+        }
+        metric_file.write(json.dumps(metrics))
 
