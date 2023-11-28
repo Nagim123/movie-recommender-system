@@ -10,6 +10,7 @@ RAW_DATASET_PATH = os.path.join(SCRIPT_PATH, "data/raw/ml-100k.zip")
 INTERIM_PATH = os.path.join(SCRIPT_PATH, "data/interim")
 MODELS_PATH = os.path.join(SCRIPT_PATH, "models")
 BEST_MODEL_PATH = os.path.join(MODELS_PATH, "best_model.pt")
+FINAL_PREDICTION_PATH = os.path.join(INTERIM_PATH, "complete_prediction.pt")
 
 MOVIE_HEADERS = [
     "movieId", "title", "releaseDate", "videoReleaseDate", "IMDb URL",

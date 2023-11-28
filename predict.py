@@ -1,5 +1,5 @@
 from models.GNN_RecommenderModel import RecommendationModel
-from constants import BEST_MODEL_PATH, INTERIM_PATH
+from constants import BEST_MODEL_PATH, FINAL_PREDICTION_PATH, INTERIM_PATH
 from torch_geometric.data import HeteroData
 import torch
 import os
@@ -29,4 +29,4 @@ if __name__ == "__main__":
         embeddings = model.encode_graph(data)
         # Predict for each user rating for each movie
         full_predictions = torch.matmul(embeddings["user"], embeddings["movie"].T)
-        torch.save(full_predictions, os.path.join(INTERIM_PATH, "complete_prediction.pt"))
+        torch.save(full_predictions, FINAL_PREDICTION_PATH)
