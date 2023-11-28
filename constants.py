@@ -8,6 +8,7 @@ import os
 SCRIPT_PATH = pathlib.Path(__file__).parent.resolve()
 RAW_DATASET_PATH = os.path.join(SCRIPT_PATH, "data/raw/ml-100k.zip")
 INTERIM_PATH = os.path.join(SCRIPT_PATH, "data/interim")
+MODELS_PATH = os.path.join(SCRIPT_PATH, "models")
 
 MOVIE_HEADERS = [
     "movieId", "title", "releaseDate", "videoReleaseDate", "IMDb URL",

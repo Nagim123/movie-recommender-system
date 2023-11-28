@@ -1,7 +1,7 @@
 from models.GNN_RecommenderModel import RecommendationModel
 from torch_geometric.loader import LinkNeighborLoader
 from torch_geometric.data import HeteroData
-from constants import INTERIM_PATH
+from constants import INTERIM_PATH, MODELS_PATH
 import torch
 import torch.nn as nn
 import tqdm
@@ -107,5 +107,5 @@ if __name__ == "__main__":
         val_loss = val_one_epoch(model, train_data, val_data, loss_fn, device)
         if val_loss < best_loss: # Saving best model
             best_loss = val_loss
-            torch.save(model.state_dict(), "best_model.pt")
+            torch.save(model.state_dict(), os.path.join(MODELS_PATH, "best_model.pt"))
         print(f"Epoch: {epoch}, train_loss: {train_loss:.4f}, val_loss: {val_loss:.4f}")
