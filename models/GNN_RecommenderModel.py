@@ -12,12 +12,12 @@ class GNN(nn.Module):
         # We will use 2 layer architecture
         self.conv1 = HeteroConv({ # Set up different layers for different edge types
             ("user", "rates", "movie"): SAGEConv((-1, -1), hidden_channels),
-            ("movie", "rev_rates", "user"): SAGEConv((-1, -1), hidden_channels),
+            ("movie", "rated_by", "user"): SAGEConv((-1, -1), hidden_channels),
         }, aggr="sum")
 
         self.conv2 = HeteroConv({
             ("user", "rates", "movie"): SAGEConv(hidden_channels, hidden_channels),
-            ("movie", "rev_rates", "user"): SAGEConv(hidden_channels, hidden_channels),
+            ("movie", "rated_by", "user"): SAGEConv(hidden_channels, hidden_channels),
         }, aggr="sum")
 
     def forward(self, x_dict: Tensor, edge_index: Tensor):

@@ -71,7 +71,7 @@ def train_val_split(data: HeteroData) -> tuple[HeteroData, HeteroData]:
         neg_sampling_ratio=0.0,
         
         edge_types=("user", "rates", "movie"), # Set all edge types
-        rev_edge_types=("movie", "rev_rates", "user"), # Reverse edges for message passing
+        rev_edge_types=("movie", "rated_by", "user"), # Reverse edges for message passing
     )
     train_data, val_data, _ = transform(data)
     return (train_data, val_data)
