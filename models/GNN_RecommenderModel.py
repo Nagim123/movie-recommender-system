@@ -11,8 +11,8 @@ class GNN(nn.Module):
         super().__init__()
         # We will use 2 layer architecture
         self.conv1 = HeteroConv({ # Set up different layers for different edge types
-            ("user", "rates", "movie"): SAGEConv((-1, -1), hidden_channels),
-            ("movie", "rated_by", "user"): SAGEConv((-1, -1), hidden_channels),
+            ("user", "rates", "movie"): SAGEConv((24, 18), hidden_channels),
+            ("movie", "rated_by", "user"): SAGEConv((18, 24), hidden_channels),
         }, aggr="sum")
 
         self.conv2 = HeteroConv({
