@@ -62,10 +62,9 @@ def create_bipartite_graph_from_dataset(rating_set_id: str) -> tuple[HeteroData,
         data['user', 'rates', 'movie'].edge_index = edge_index
 
         rating = torch.from_numpy(df['rating'].values).to(torch.long)
-        data['user', 'rates', 'movie'].rating = rating
+        data['user', 'rates', 'movie'].edge_label = rating
 
         data['movie', 'rated_by', 'user'].edge_index = edge_index.flip([0])
-        data['movie', 'rated_by', 'user'].rating = rating
         result.append(data)
 
     return result
