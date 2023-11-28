@@ -91,8 +91,6 @@ if __name__ == "__main__":
     train_data = HeteroData(_mapping=torch.load(os.path.join(INTERIM_PATH, f"data{args.part}_train.pt")))
     val_data = HeteroData(_mapping=torch.load(os.path.join(INTERIM_PATH, f"data{args.part}_val.pt")))
     train_loader = create_dataloader(train_data, args.batch_size)
-    
-    print(train_data["user", "rates", "movie"].edge_label_index)
 
     # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
