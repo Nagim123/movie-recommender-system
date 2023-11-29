@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import json
 import pathlib
 import os
+import argparse
+
 SCRIPT_PATH = pathlib.Path(__file__).parent.resolve()
 FIGURE_FOLDER_PATH = os.path.join(SCRIPT_PATH, "../reports/figures")
 
@@ -39,19 +41,20 @@ def visualize_metric_file_comparison(filepaths: list[str]) -> None:
         plt.savefig(os.path.join(FIGURE_FOLDER_PATH, f"{metric}_plot.png"))
         
 
-def visualize_training_loss(filepath: str) -> None:
+def visualize_training_loss(filename: str) -> None:
     """
     Plot train and validation losses values from training process.
 
     Parameters:
-        filepath (str): File that contain losses.
+        filename (str): Name of file that contain losses.
     """
-    clear_name = filepath.split(".")[0]
+    filepath = os.path.join(SCRIPT_PATH, filename)
+    clear_name = filename.split(".")[0]
     part_name = clear_name.split("_")[1]
     train_loss, val_loss = [], []
     with open(filepath, "r") as loss_file:
         data = loss_file.read().split("\n")
-        train_loss, val_loss = data[0], data[1]
+        train_loss, val_loss = eval(data[0]), eval(data[1])
     epochs = [i for i in range(len(train_loss))]
     # Plot loss/epoch plots
     plt.plot(epochs, train_loss, label="Train loss")
@@ -65,5 +68,13 @@ def visualize_training_loss(filepath: str) -> None:
     plt.savefig(os.path.join(FIGURE_FOLDER_PATH, f"{clear_name}_losses.png"))
 
 if __name__ == "__main__":
-    metric_files = search_for_metric_files()
-    visualize_metric_file_comparison(metric_files)
+    # Command line argument parsing
+    parser = argparse.ArgumentParser(description="Visualization script. Do not provide arguments to plot metrics. Otherwise use --loss")
+    parser.add_argument("--loss", type=str, help="Name of file with loss data.")
+    args = parser.parse_args()
+
+    if not args.loss is None:
+        visualize_training_loss(args.loss)
+    else:    
+        metric_files = search_for_metric_files()
+        visualize_metric_file_comparison(metric_files)
