@@ -18,6 +18,12 @@ def search_for_metric_files() -> None:
     return metric_files
 
 def visualize_metric_file_comparison(filepaths: list[str]) -> None:
+    """
+    Visualize the comparison of metrics.
+
+    Parameters:
+        filepaths (list[str]): Paths to metric files.
+    """
     metrics = {"Precision": [], "Recall": [], "NDCG": [], "RMSE": []}
     parts = []
     for filepath in filepaths:
