@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from torch_geometric.nn import SAGEConv, HeteroConv, JumpingKnowledge
 from torch_geometric.typing import Tensor
@@ -35,7 +36,14 @@ class RecommendationModel(nn.Module):
         # Instantiate GNN model
         self.gnn = GNN(hidden_channels)
         # Use cosine simularity to predict rating
-        self.cosine = nn.CosineSimilarity()
+        self.classifier = nn.Sequential(
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Linear(64, 16),
+            nn.ReLU(),
+            nn.Linear(16, 1),
+            nn.Sigmoid()
+        )
 
     def encode_graph(self, data: HeteroData) -> dict:
         """
@@ -62,7 +70,7 @@ class RecommendationModel(nn.Module):
         edge_feat_user = user_embeds[edge_label_index[0]]
         edge_feat_movie = movie_embeds[edge_label_index[1]]
 
-        return (self.cosine(edge_feat_user, edge_feat_movie) + 1) * 2.5
+        return self.classifier(torch.cat([edge_feat_user, edge_feat_movie], dim=1))*5
 
     def forward(self, data: HeteroData) -> Tensor:
         x_dict = self.encode_graph(data)
