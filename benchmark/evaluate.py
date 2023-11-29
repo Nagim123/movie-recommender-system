@@ -71,8 +71,11 @@ def compute_DCG(recommendation: torch.Tensor, movie_ratings: torch.Tensor, user_
     """
     DCG = 0
     for i, movie in enumerate(recommendation):
-        indx = (movie_ratings[:, 0] == movie).nonzero().item()
-        score = (2**(movie_ratings[indx][1]) - 1).item()
+        if not movie in movie_ratings[:, 0]:
+            score = 0
+        else:
+            indx = (movie_ratings[:, 0] == movie).nonzero().item()
+            score = (2**(movie_ratings[indx][1]) - 1).item()
         discount = np.log2(i+2)
         DCG += score / discount
 
@@ -160,14 +163,18 @@ if __name__ == "__main__":
         raise Exception("Final prediction was not created. Please run predict.py file!")
 
     test_data = HeteroData(_mapping=torch.load(os.path.join(INTERIM_PATH, f"data{args.part}_test.pt")))
+    train_data = HeteroData(_mapping=torch.load(os.path.join(INTERIM_PATH, f"data{args.part}_train.pt")))
+    
     user_number = test_data["user"].x.shape[0]
     movie_number = test_data["movie"].x.shape[0]
 
     
     test_edges = test_data["user", "rates", "movie"].edge_index
+    train_edges = train_data["user", "rates", "movie"].edge_index
     full_edges = torch.zeros((2, user_number*movie_number))
     final_prediction = torch.load(FINAL_PREDICTION_PATH)
     masked_prediction = torch.zeros(test_edges.shape[1])
+    real_prediction = final_prediction.detach().clone()
 
     for user in range(user_number):
         for movie in range(movie_number):
@@ -178,6 +185,11 @@ if __name__ == "__main__":
         user, movie = test_edges[0][i], test_edges[1][i]
         index = (user+1)*(movie+1)-1
         masked_prediction[i] = final_prediction[index]
+    
+    for i in range(train_edges.shape[1]):
+        user, movie = train_edges[0][i], train_edges[1][i]
+        index = (user+1)*(movie+1)-1
+        real_prediction[index] = 0
 
 
     K = 20
@@ -185,7 +197,7 @@ if __name__ == "__main__":
 
     precisions, recalls, NDCGs = [], [], []
     for user in progress:
-        recommendation = get_model_recommendations(masked_prediction, test_edges, user, k=K)
+        recommendation = get_model_recommendations(real_prediction, full_edges, user, k=K)
         precision, recall = evaluate_precision_and_recall(recommendation, test_data, user, k=K)
         NDCG = evaluate_NDCG(recommendation, test_data, user)
         precisions.append(precision)
