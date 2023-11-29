@@ -1,7 +1,7 @@
 from models.GNN_RecommenderModel import RecommendationModel
 from torch_geometric.loader import LinkNeighborLoader
 from torch_geometric.data import HeteroData
-from constants import INTERIM_PATH, BEST_MODEL_PATH
+from constants import INTERIM_PATH, BEST_MODEL_PATH, BENCHMARK_DIR_PATH
 import torch
 import torch.nn as nn
 import tqdm
@@ -81,13 +81,14 @@ def val_one_epoch(model: RecommendationModel, train_data: HeteroData, val_data: 
     return loss.item()
 
 if __name__ == "__main__":
+    # Command line argument parsing
     parser = argparse.ArgumentParser(description="GNN training script. Specify part of dataset to start training.")
     parser.add_argument("part", choices=['1', '2', '3', '4', '5', 'a', 'b'])
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=256)
     args = parser.parse_args()
 
-
+    # Loading data for training
     train_data = HeteroData(_mapping=torch.load(os.path.join(INTERIM_PATH, f"data{args.part}_train.pt")))
     val_data = HeteroData(_mapping=torch.load(os.path.join(INTERIM_PATH, f"data{args.part}_val.pt")))
     train_loader = create_dataloader(train_data, args.batch_size)
@@ -101,11 +102,19 @@ if __name__ == "__main__":
     loss_fn = nn.MSELoss()
     epochs = args.epochs
     best_loss = 1e9
-
+    validation_losses, train_losses = []
     for epoch in range(epochs):
         train_loss = train_one_epoch(model, train_loader, optimizer, loss_fn, device)
         val_loss = val_one_epoch(model, train_data, val_data, loss_fn, device)
         if val_loss < best_loss: # Saving best model
             best_loss = val_loss
             torch.save(model.state_dict(), BEST_MODEL_PATH)
+        
+        train_losses.append(train_loss)
+        validation_losses.append(val_loss)
         print(f"Epoch: {epoch}, train_loss: {train_loss:.4f}, val_loss: {val_loss:.4f}")
+    
+    # Save data about training
+    with open(os.path.join(BENCHMARK_DIR_PATH, f"train_{args.part}.txt"), "w") as train_data_file:
+        train_data_file.write(f"{train_losses}\n{validation_losses}")
+    print(f"Info about training saved into train_{args.part}.txt")
