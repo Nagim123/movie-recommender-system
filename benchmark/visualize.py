@@ -62,7 +62,7 @@ def visualize_training_loss(filename: str) -> None:
      # Set labels and titles
     plt.xlabel("epochs")
     plt.ylabel("loss")
-    plt.title(f"u{part_name}.base losses")
+    plt.title(f"u{part_name}.base MSE losses")
     plt.legend()
     # Save figure
     plt.savefig(os.path.join(FIGURE_FOLDER_PATH, f"{clear_name}_losses.png"))

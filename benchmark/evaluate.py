@@ -97,6 +97,7 @@ def evaluate_NDCG(recommendation: torch.Tensor, test_graph: HeteroData, user_id:
     DCG = compute_DCG(recommendation, movie_ratings, user_id)
     best_recommendation = movie_ratings[movie_ratings[:, 1].sort(descending=True)[1]][:, 0]
     IDCG = compute_DCG(best_recommendation, movie_ratings, user_id)
+
     return DCG/IDCG
 
 def get_user_links_ids(graph: HeteroData, user_id: int) -> torch.Tensor:
@@ -194,9 +195,13 @@ if __name__ == "__main__":
 
     K = 20
     progress = tqdm.tqdm(range(user_number))
+    test_users = set(test_edges[0].tolist())
 
     precisions, recalls, NDCGs = [], [], []
     for user in progress:
+        if not user in test_users:
+            # Only evaluate for users that are in test set
+            continue
         recommendation = get_model_recommendations(real_prediction, full_edges, user, k=K)
         precision, recall = evaluate_precision_and_recall(recommendation, test_data, user, k=K)
         NDCG = evaluate_NDCG(recommendation, test_data, user)
