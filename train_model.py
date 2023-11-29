@@ -102,7 +102,7 @@ if __name__ == "__main__":
     loss_fn = nn.MSELoss()
     epochs = args.epochs
     best_loss = 1e9
-    validation_losses, train_losses = []
+    validation_losses, train_losses = [], []
     for epoch in range(epochs):
         train_loss = train_one_epoch(model, train_loader, optimizer, loss_fn, device)
         val_loss = val_one_epoch(model, train_data, val_data, loss_fn, device)
