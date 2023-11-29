@@ -70,7 +70,7 @@ class RecommendationModel(nn.Module):
         edge_feat_user = user_embeds[edge_label_index[0]]
         edge_feat_movie = movie_embeds[edge_label_index[1]]
 
-        return self.classifier(torch.cat([edge_feat_user, edge_feat_movie], dim=1))*5
+        return (self.classifier(torch.cat([edge_feat_user, edge_feat_movie], dim=1))*5).squeeze(1)
 
     def forward(self, data: HeteroData) -> Tensor:
         x_dict = self.encode_graph(data)
