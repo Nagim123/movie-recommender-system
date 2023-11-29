@@ -39,8 +39,30 @@ def visualize_metric_file_comparison(filepaths: list[str]) -> None:
         plt.savefig(os.path.join(FIGURE_FOLDER_PATH, f"{metric}_plot.png"))
         
 
-def visualize_training_loss(filepath: str):
-    pass
+def visualize_training_loss(filepath: str) -> None:
+    """
+    Plot train and validation losses values from training process.
+
+    Parameters:
+        filepath (str): File that contain losses.
+    """
+    clear_name = filepath.split(".")[0]
+    part_name = clear_name.split("_")[1]
+    train_loss, val_loss = [], []
+    with open(filepath, "r") as loss_file:
+        data = loss_file.read().split("\n")
+        train_loss, val_loss = data[0], data[1]
+    epochs = [i for i in range(len(train_loss))]
+    # Plot loss/epoch plots
+    plt.plot(epochs, train_loss, label="Train loss")
+    plt.plot(epochs, val_loss, label="Validation loss")
+     # Set labels and titles
+    plt.xlabel("epochs")
+    plt.ylabel("loss")
+    plt.title(f"u{part_name}.base losses")
+    plt.legend()
+    # Save figure
+    plt.savefig(os.path.join(FIGURE_FOLDER_PATH, f"{clear_name}_losses.png"))
 
 if __name__ == "__main__":
     metric_files = search_for_metric_files()
