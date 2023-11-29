@@ -95,8 +95,6 @@ def evaluate_NDCG(recommendation: torch.Tensor, test_graph: HeteroData, user_id:
     """
     movie_ratings = extract_movies_with_ratings_by_user(test_graph, user_id)
     DCG = compute_DCG(recommendation, movie_ratings, user_id)
-    if DCG == 0:
-        return 1
     best_recommendation = movie_ratings[movie_ratings[:, 1].sort(descending=True)[1]][:, 0]
     IDCG = compute_DCG(best_recommendation, movie_ratings, user_id)
     return DCG/IDCG
