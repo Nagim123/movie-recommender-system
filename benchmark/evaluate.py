@@ -173,7 +173,9 @@ if __name__ == "__main__":
     train_edges = train_data["user", "rates", "movie"].edge_index
     full_edges = torch.zeros((2, user_number*movie_number))
     final_prediction = torch.load(FINAL_PREDICTION_PATH)
+    # Prediction for only test edges
     masked_prediction = torch.zeros(test_edges.shape[1])
+    # Prediction for a whole graph without training data
     real_prediction = final_prediction.detach().clone()
 
     for user in range(user_number):
@@ -203,6 +205,7 @@ if __name__ == "__main__":
         precisions.append(precision)
         recalls.append(recall)
         NDCGs.append(NDCG)
+    # Display metrics
     print(f"Precision@{K} = {np.mean(precisions)}")
     print(f"Recall@{K} = {np.mean(recalls)}")
     print(f"NDCG@{K} = {np.mean(NDCGs)}")
