@@ -38,11 +38,11 @@ Data about losses will be saved to *benchmark/test_1.txt* and best weights will 
 
 # Prediction
 To predict full user/movie rating matrix run the following command. You must have best weights for the appropriate subset of MovieLens100k (If you predict for **ua.test**, you should train model on **ua.base** before)
-```
+```console
 python predict.py 1|2|3|4|5|a|b
 ```
 Example:
-```
+```console
 python predict.py 1
 ```
 The full rating matrix will be saved into *data/interum/complete_prediction.pt*
