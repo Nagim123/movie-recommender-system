@@ -25,6 +25,11 @@ If you are on linux also download
 ```console
 pip install pyg-lib -f https://data.pyg.org/whl/torch-2.0.1+cpu.html
 ```
+# Data preprocessing
+In case you want to preprocess data again (It's already preprocessed)
+```console
+python preprocess_data.py
+```
 # Training
 To start training run the following command
 ```console
