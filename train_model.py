@@ -1,4 +1,4 @@
-from models.GNN_RecommenderModel import RecommendationModel
+from torch_geometric.nn.models.lightgcn import LightGCN
 from torch_geometric.loader import LinkNeighborLoader
 from torch_geometric.data import HeteroData
 from constants import INTERIM_PATH, BEST_MODEL_PATH, BENCHMARK_DIR_PATH
@@ -25,16 +25,17 @@ def create_dataloader(data: HeteroData, batch_size: int) -> LinkNeighborLoader:
         num_neighbors=[128] * 2,
         # Use a batch size of 256 for sampling training nodes
         batch_size=batch_size,
+        neg_sampling="binary",
         edge_label_index=(("user", "rates", "movie"), data["user", "rates", "movie"].edge_label_index),
         edge_label=data["user", "rates", "movie"].edge_label
     )
 
-def train_one_epoch(model: RecommendationModel, train_loader: LinkNeighborLoader, optimizer: torch.optim.Optimizer, loss_fn, device) -> None:
+def train_one_epoch(model: LightGCN, train_loader: LinkNeighborLoader, optimizer: torch.optim.Optimizer, loss_fn, device) -> None:
     """
     Train model for one epoch.
 
     Parameters:
-        model (RecommendationModel): Recommendation model.
+        model (LightGCN): Recommendation model.
         train_loader (LinkNeighborLoader): Train data loader.
         optimizer (Optimizer): Optimizer.
         loss_fn (_Loss): Loss function.
@@ -58,12 +59,12 @@ def train_one_epoch(model: RecommendationModel, train_loader: LinkNeighborLoader
     return total_loss
 
 
-def val_one_epoch(model: RecommendationModel, train_data: HeteroData, val_data: HeteroData, loss_fn, device) -> None:
+def val_one_epoch(model: LightGCN, train_data: HeteroData, val_data: HeteroData, loss_fn, device) -> None:
     """
     Validate model for one epoch.
 
     Parameters:
-        model (RecommendationModel): Recommendation model.
+        model (LightGCN): Recommendation model.
         train_data (HeteroData): Train graph.
         val_data (HeteroData): Validation graph.
         loss_fn (_Loss): Loss function.
@@ -72,9 +73,8 @@ def val_one_epoch(model: RecommendationModel, train_data: HeteroData, val_data: 
     model.eval()
     with torch.no_grad():
         # Get predictions from model and true labels
-        embeds = model.encode_graph(train_data)
         edges = val_data["user", "rates", "movie"].edge_label_index
-        pred = model.predict_ratings(embeds["user"], embeds["movie"], edges)
+        pred = model(train_data, edges)
         ground_truth = val_data["user", "rates", "movie"].edge_label
         # Calculate loss and total loss
         loss = loss_fn(pred, ground_truth.float())
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # Create model
-    model = RecommendationModel(hidden_channels=128).to(device)
+    model = LightGCN(train_data["user"].x.shape[0], embedding_dim=32, num_layers=4)
     # Use Adam optmizer
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     loss_fn = nn.MSELoss()
