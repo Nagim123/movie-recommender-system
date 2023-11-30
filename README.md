@@ -74,3 +74,5 @@ Run the following command to draw losses
 python benchmark/visualize.py --loss <LOSS FILE NAME>
 ```
 Every visualization saved as .png in *reports/figures*
+# Using existing weights
+Download appropriate weights from [here](https://github.com/Nagim123/movie-recommender-system/releases/tag/Weights) and place them to *models/*, then rename to *best_model.pt*. After that you can run prediction.

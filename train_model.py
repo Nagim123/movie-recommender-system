@@ -81,6 +81,18 @@ def val_one_epoch(model: RecommendationModel, train_data: HeteroData, val_data: 
     return loss.item()
 
 if __name__ == "__main__":
+
+    # SET TRAINING REPRODUCABILITY:
+    import numpy as np
+    import random
+
+    seed = 42
+    # Set seeding
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
     # Command line argument parsing
     parser = argparse.ArgumentParser(description="GNN training script. Specify part of dataset to start training.")
     parser.add_argument("part", choices=['1', '2', '3', '4', '5', 'a', 'b'])
