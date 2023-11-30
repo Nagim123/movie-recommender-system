@@ -13,9 +13,12 @@ git clone https://github.com/Nagim123/movie-recommender-system.git
 ```console
 cd movie-recommender-system
 ```
-2. Create virtual environment
+2. Create virtual environment and activate
 ```console
 python -m venv .venv
+```
+```console
+.venv\Scripts\activate
 ```
 3. Download dependencies
 ```console
