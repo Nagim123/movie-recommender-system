@@ -202,7 +202,7 @@ if __name__ == "__main__":
         if not user in test_users:
             # Only evaluate for users that are in test set
             continue
-        recommendation = get_model_recommendations(real_prediction, full_edges, user, k=K)
+        recommendation = get_model_recommendations(masked_prediction, test_edges, user, k=K)
         precision, recall = evaluate_precision_and_recall(recommendation, test_data, user, k=K)
         NDCG = evaluate_NDCG(recommendation, test_data, user)
         precisions.append(precision)
