@@ -71,6 +71,6 @@ python benchmark/visualize.py
 ```
 Run the following command to draw losses
 ```console
-python benchmark/visualize.py
+python benchmark/visualize.py --loss <LOSS FILE NAME>
 ```
 Every visualization saved as .png in *reports/figures*
