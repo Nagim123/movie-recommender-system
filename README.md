@@ -64,3 +64,13 @@ Example
 python benchmark/evaluate.py 1
 ```
 Data about metrics will be saved into *benchmark/metric_1.json* file.
+# Visualization
+Run the following command to visualize all metrics.
+```console
+python benchmark/visualize.py
+```
+Run the following command to draw losses
+```console
+python benchmark/visualize.py
+```
+Every visualization saved as .png in *reports/figures*
