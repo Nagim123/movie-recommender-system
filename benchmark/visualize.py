@@ -33,11 +33,13 @@ def visualize_metric_file_comparison(filepaths: list[str]) -> None:
             json_data = json.load(metric_file)
             for key in metrics:
                 metrics[key].append(json_data[key])
-                parts.append(f"u{json_data['part']}.test, K={json_data['K']}")
+            parts.append(f"u{json_data['part']}.test, K={json_data['K']}")
     
     for i, metric in enumerate(metrics):
         plt.figure(i)
         plt.bar(parts, metrics[metric])
+        if metric != "RMSE":
+            plt.yticks([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
         plt.savefig(os.path.join(FIGURE_FOLDER_PATH, f"{metric}_plot.png"))
         
 
